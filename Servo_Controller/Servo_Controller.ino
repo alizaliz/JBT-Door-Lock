@@ -1,10 +1,14 @@
+
 /*
 */
 
 #include <Servo.h>
+#include <SoftwareSerial.h>
+
 
 /* Components */
 const int servoPin = 9;
+SoftwareSerial XBee(2, 3); // RX, TX
 
 /*
  * Message constants:
@@ -36,7 +40,7 @@ boolean stringComplete = false;  // whether the string is complete
 
 void setup() {
   servo.attach(servoPin); 
-  Serial.begin(38400);
+  XBee.begin(38400);
   inputString.reserve(20);
   servo.write(unlockPos);
   curPos = unlockPos;
@@ -47,7 +51,7 @@ void loop() {
   
   // print the string when a newline arrives:
   if (stringComplete) {
-    switch(inputstring[0]){
+    switch(inputString.charAt(0)){
       case lock:
         servo.write(lockPos);
         curPos = unlockPos;
@@ -77,6 +81,8 @@ void serialEvent() {
 
     char inChar = (char)Serial.read();
 
+    Serial.write(inChar);
+
     switch (readState){
       case 0: // Search for preamble
         if(inChar == preamble){
@@ -87,7 +93,7 @@ void serialEvent() {
        if (inChar == postamble) { // Search for postamble - escape if found
           stringComplete = true; // Set flag
           readState = 0;
-        } else if (inputString.length < 20){ 
+        } else if (inputString.length() < 20){ 
           inputString += inChar;
         } else { // Escape if string too long
           readState = 0;
